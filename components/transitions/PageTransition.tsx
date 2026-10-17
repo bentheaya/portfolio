@@ -5,233 +5,167 @@ import gsap from 'gsap';
 import { usePageTransition } from './TransitionContext';
 
 /**
- * PageTransition — Circular Water-Drop Wipe
+ * PageTransition — Cinematic Directional Sweep
  *
- * Uses CSS `clip-path: circle()` which is browser-interpolated as a perfect
- * smooth circle at every frame — no polygons, no corners, no sharp edges.
+ * Replaces the GPU-heavy feTurbulence SVG filter with a buttery-smooth,
+ * hardware-accelerated curtain transition.
  *
- * Visual: A frosted-glass water-drop expands from the bottom-center of the
- * screen (like a droplet hitting a surface and spreading), covering everything,
- * then the new page's content is revealed as the circle shrinks back from the
- * top-center — like water pulling back up a surface.
- *
- * Layers:
- *  1. Frosted glass overlay  — backdrop-blur + deep ocean colour
- *  2. SVG feTurbulence filter — applied during the wipe for water distortion
- *  3. Shimmer highlight band  — sweeps across as the circle fills
- *
- * Timing:
- *  Enter (flood) : 680ms total  → route push at 700ms
- *  Exit (recede) : 580ms total  → cleanup at 650ms
+ * Sequence:
+ *  1. An obsidian veil with a glowing accent-colored leading edge sweeps
+ *     upward from bottom to cover the viewport (power3.inOut, ~380ms).
+ *  2. While the screen is veiled, Next.js swaps the route and Lenis resets
+ *     the scroll position to top=0.
+ *  3. The veil continues upward smoothly out of the viewport (power3.inOut, ~380ms),
+ *     revealing the newly mounted page without jarring jumps or frame drops.
  */
-
-// ── Clip-path circle states ──────────────────────────────────────────────────
-// All `at X% Y%` values define the circle's origin point.
-
-// Hidden: circle is collapsed at the very bottom-center
-const HIDDEN_BOTTOM = 'circle(0% at 50% 108%)';
-
-// Full flood: circle expands to cover all four corners from bottom-center
-// 160% radius guarantees full coverage on all aspect ratios
-const FLOODED = 'circle(160% at 50% 108%)';
-
-// For exit: starts fully visible from top-center origin
-const FLOOD_TOP = 'circle(160% at 50% -8%)';
-
-// Hidden from top: collapsed at top-center
-const HIDDEN_TOP = 'circle(0% at 50% -8%)';
-
 export function PageTransition() {
-  const { transitionProgress, cursorX, cursorY } = usePageTransition();
-  const glassRef   = useRef<HTMLDivElement>(null);
-  const shimmerRef = useRef<HTMLDivElement>(null);
-  const filterRef  = useRef<SVGFETurbulenceElement>(null);
-  const svgRef     = useRef<SVGSVGElement>(null);
+  const { transitionProgress, targetHref } = usePageTransition();
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const leadingLineRef = useRef<HTMLDivElement>(null);
+  const hudRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const glass      = glassRef.current;
-    const shimmer    = shimmerRef.current;
-    const turbulence = filterRef.current;
-    const svg        = svgRef.current;
-    if (!glass || !shimmer || !turbulence || !svg) return;
+    const overlay = overlayRef.current;
+    const leadingLine = leadingLineRef.current;
+    const hud = hudRef.current;
+    if (!overlay || !leadingLine || !hud) return;
 
     const prefersReduced =
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Calculate cursor percentage coordinates relative to viewport
-    const pctX = (cursorX / (typeof window !== 'undefined' ? window.innerWidth : 1)) * 100;
-    const pctY = (cursorY / (typeof window !== 'undefined' ? window.innerHeight : 1)) * 100;
-
-    const cursorHidden = `circle(0% at ${pctX}% ${pctY}%)`;
-    const cursorFlooded = `circle(150% at ${pctX}% ${pctY}%)`;
-
-    // ── Reduced-motion fallback: simple opacity fade ────────────────────
+    // Reduced motion fallback: gentle opacity crossfade
     if (prefersReduced) {
       if (transitionProgress === 'animating-in') {
-        gsap.set([glass, svg], { display: 'block' });
-        gsap.set(glass, { opacity: 0 });
-        gsap.to(glass, { opacity: 1, duration: 0.3, ease: 'power1.in' });
+        gsap.set(overlay, { display: 'flex', yPercent: 0, opacity: 0 });
+        gsap.to(overlay, { opacity: 1, duration: 0.25, ease: 'power1.out' });
       } else if (transitionProgress === 'animating-out') {
-        gsap.to(glass, {
-          opacity: 0, duration: 0.3, ease: 'power1.out',
-          onComplete: () => gsap.set([glass, svg], { display: 'none' }),
+        gsap.to(overlay, {
+          opacity: 0,
+          duration: 0.25,
+          ease: 'power1.in',
+          onComplete: () => {
+            gsap.set(overlay, { display: 'none' });
+          },
         });
       } else {
-        gsap.set([glass, svg], { display: 'none' });
+        gsap.set(overlay, { display: 'none' });
       }
       return;
     }
 
-    // ── Enter: circle expands from cursor coordinates ──────────────────
+    // ── Phase 1: Curtain sweeps in from bottom ───────────────────────────────
     if (transitionProgress === 'animating-in') {
-      gsap.set([glass, svg], { display: 'block' });
-      gsap.set(glass, { clipPath: cursorHidden, opacity: 1 });
-      gsap.set(shimmer, { x: '-110%', opacity: 0 });
+      gsap.killTweensOf([overlay, hud, leadingLine]);
 
-      // Animate turbulence during the wipe (water movement)
-      gsap.to(turbulence, {
-        attr: { seed: 12, baseFrequency: '0.016 0.05' },
-        duration: 0.65,
-        ease: 'none',
+      gsap.set(overlay, {
+        display: 'flex',
+        yPercent: 100,
+        opacity: 1,
+      });
+      gsap.set(hud, { opacity: 0, y: 12 });
+      gsap.set(leadingLine, {
+        top: 0,
+        bottom: 'auto',
+        opacity: 1,
       });
 
       const tl = gsap.timeline();
-      tl
-        // Expand circle — ease gives it a weighty, fluid feel
-        .to(glass, {
-          clipPath: cursorFlooded,
-          duration: 0.65,
-          ease: 'power2.inOut',
-        })
-        // Shimmer sweeps as the water settles
-        .to(shimmer, {
-          x: '120%',
-          opacity: 0.5,
-          duration: 0.45,
-          ease: 'power1.inOut',
-        }, '-=0.25');
+      tl.to(overlay, {
+        yPercent: 0,
+        duration: 0.38,
+        ease: 'power3.inOut',
+      }).to(
+        hud,
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.18,
+          ease: 'power2.out',
+        },
+        '-=0.12'
+      );
 
-    // ── Exit: circle collapses back to cursor coordinates ──────────────
+    // ── Phase 2: Curtain lifts upward out of the screen ──────────────────────
     } else if (transitionProgress === 'animating-out') {
-      gsap.set(glass, { clipPath: cursorFlooded });
+      gsap.killTweensOf([overlay, hud, leadingLine]);
 
-      gsap.to(turbulence, {
-        attr: { seed: 5, baseFrequency: '0.02 0.06' },
-        duration: 0.55,
-        ease: 'none',
+      gsap.set(leadingLine, {
+        top: 'auto',
+        bottom: 0,
+        opacity: 1,
       });
 
       const tl = gsap.timeline({
         onComplete: () => {
-          gsap.set([glass, svg], { display: 'none' });
-          gsap.set(glass, { clipPath: cursorHidden, opacity: 1 });
-          gsap.set(shimmer, { x: '-110%', opacity: 0 });
-          gsap.set(turbulence, { attr: { baseFrequency: '0.014 0.04', seed: 8 } });
+          gsap.set(overlay, { display: 'none', yPercent: 100 });
         },
       });
-      tl.to(glass, {
-        clipPath: cursorHidden,
-        duration: 0.56,
-        ease: 'power2.inOut',
-      });
 
-    // ── Idle ────────────────────────────────────────────────────────────
+      tl.to(hud, {
+        opacity: 0,
+        y: -10,
+        duration: 0.15,
+        ease: 'power2.in',
+      }).to(
+        overlay,
+        {
+          yPercent: -100,
+          duration: 0.38,
+          ease: 'power3.inOut',
+        },
+        '-=0.08'
+      );
+
+    // ── Idle state ────────────────────────────────────────────────────────────
     } else {
-      gsap.set([glass, svg], { display: 'none' });
-      gsap.set(glass, { clipPath: cursorHidden, opacity: 1 });
-      gsap.set(shimmer, { x: '-110%', opacity: 0 });
-      gsap.set(turbulence, { attr: { baseFrequency: '0.014 0.04', seed: 8 } });
+      gsap.set(overlay, { display: 'none', yPercent: 100 });
     }
-  }, [transitionProgress, cursorX, cursorY]);
+  }, [transitionProgress]);
+
+  // Clean label from target href (e.g., "/work/slopslayer" → "work / slopslayer")
+  const formattedRoute = targetHref
+    ? targetHref.replace(/^\//, '').replace(/\//g, ' // ') || 'index'
+    : 'routing';
 
   return (
-    <>
-      {/* SVG filter definition — zero-size, provides water-distort filter id */}
-      <svg
-        ref={svgRef}
-        style={{ display: 'none', position: 'fixed', width: 0, height: 0 }}
-        aria-hidden="true"
-      >
-        <defs>
-          <filter
-            id="water-distort"
-            x="-10%" y="-10%" width="120%" height="120%"
-            colorInterpolationFilters="sRGB"
-          >
-            <feTurbulence
-              ref={filterRef}
-              type="turbulence"
-              baseFrequency="0.014 0.04"
-              numOctaves="4"
-              seed="8"
-              stitchTiles="stitch"
-              result="noise"
-            />
-            <feDisplacementMap
-              in="SourceGraphic"
-              in2="noise"
-              scale="18"
-              xChannelSelector="R"
-              yChannelSelector="G"
-            />
-          </filter>
-        </defs>
-      </svg>
-
-      {/* Glass overlay — the actual morphing element */}
+    <div
+      ref={overlayRef}
+      aria-hidden="true"
+      className="fixed inset-0 z-[150] pointer-events-none w-screen h-screen hidden flex-col items-center justify-center bg-canvas-bg transform-gpu will-change-transform"
+      style={{
+        backgroundColor: 'rgb(8, 8, 8)',
+      }}
+    >
+      {/* Luminous accent leading-edge line */}
       <div
-        ref={glassRef}
-        aria-hidden="true"
-        className="fixed inset-0 z-50 pointer-events-none w-screen h-screen"
+        ref={leadingLineRef}
+        className="absolute left-0 right-0 h-[2px] pointer-events-none"
         style={{
-          display: 'none',
-          clipPath: HIDDEN_BOTTOM,
-          // Deep ocean water — fixed palette, no accent variables
-          background: `linear-gradient(
-            165deg,
-            rgba(5,  28, 52, 0.88) 0%,
-            rgba(8,  48, 80, 0.82) 35%,
-            rgba(6,  38, 65, 0.86) 65%,
-            rgba(4,  22, 44, 0.90) 100%
-          )`,
-          backdropFilter: 'blur(16px) saturate(1.6) brightness(0.88)',
-          WebkitBackdropFilter: 'blur(16px) saturate(1.6) brightness(0.88)',
-          filter: 'url(#water-distort)',
+          backgroundColor: 'var(--color-accent-bright)',
+          boxShadow: '0 0 20px 2px var(--color-accent-bright), 0 0 40px 6px var(--color-accent-bright)',
         }}
-      >
-        {/* Shimmer band — light reflecting off water surface */}
-        <div
-          ref={shimmerRef}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '38%',
-            height: '100%',
-            background:
-              'linear-gradient(108deg, transparent 25%, rgba(140,210,230,0.14) 50%, transparent 75%)',
-            transform: 'translateX(-110%)',
-            opacity: 0,
-            pointerEvents: 'none',
-          }}
-        />
+      />
 
-        {/* Horizontal caustic refraction lines */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage: `repeating-linear-gradient(
-              0deg,
-              transparent,
-              transparent 30px,
-              rgba(120,195,215,0.035) 30px,
-              rgba(120,195,215,0.035) 31px
-            )`,
-            pointerEvents: 'none',
-          }}
-        />
+      {/* Subtle background radial ambient glow */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-20"
+        style={{
+          background: 'radial-gradient(circle at 50% 50%, var(--color-accent-bright) 0%, transparent 60%)',
+        }}
+      />
+
+      {/* Minimal technical HUD readout */}
+      <div
+        ref={hudRef}
+        className="relative z-10 flex flex-col items-center gap-3 select-none"
+      >
+        <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-canvas-border/80 bg-canvas-elevated/90 backdrop-blur-md shadow-xl">
+          <span className="w-1.5 h-1.5 rounded-full bg-accent-bright animate-pulse" />
+          <span className="font-mono text-[10px] uppercase tracking-widest text-canvas-text-secondary">
+            // route.dispatch: <span className="text-accent-bright">{formattedRoute}</span>
+          </span>
+        </div>
       </div>
-    </>
+    </div>
   );
 }

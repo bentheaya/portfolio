@@ -1,16 +1,13 @@
 'use client';
 
-import { useState } from 'react';
 import { HomeHero } from '@/components/sections/home-hero';
 import { AboutSection } from '@/components/sections/about-section';
 import { FeaturedProjectsSection, type FeaturedProject } from '@/components/sections/featured-projects-section';
 import { ConstellationSection } from '@/components/sections/constellation-section';
 import { ContactSection } from '@/components/sections/contact-section';
 import { HueControl } from '@/components/ui/hue-control';
-import { PageLoader } from '@/components/ui/PageLoader';
 
 export default function Home() {
-  const [loading, setLoading] = useState(true);
 
   const featuredProjects: FeaturedProject[] = [
     {
@@ -55,10 +52,6 @@ export default function Home() {
 
   return (
     <>
-      {/* Full-screen loader — dismounts after fade-out completes */}
-      {loading && <PageLoader onComplete={() => setLoading(false)} />}
-
-      {/* Main content — already rendered in DOM, revealed as loader fades */}
       <HomeHero
         name="Benaih Shaback."
         tagline="Building at the intersection of mathematics, systems, and learning"

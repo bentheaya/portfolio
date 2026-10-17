@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface Frame {
   id: number;
@@ -22,6 +22,13 @@ export function SlopSlayerDemo() {
   const [scanning, setScanning] = useState(false);
   const [activeFrame, setActiveFrame] = useState<number | null>(null);
   const [scanSpeed, setScanSpeed] = useState('100ms');
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
 
   const startScan = () => {
     if (scanning) return;
@@ -31,9 +38,12 @@ export function SlopSlayerDemo() {
     setFrames(prev => prev.map(f => ({ ...f, scanned: false })));
     
     let currentIdx = 0;
-    const interval = setInterval(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+
+    intervalRef.current = setInterval(() => {
       if (currentIdx >= frames.length) {
-        clearInterval(interval);
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        intervalRef.current = null;
         setScanning(false);
         setActiveFrame(null);
         return;

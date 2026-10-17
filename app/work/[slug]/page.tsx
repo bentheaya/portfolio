@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { ProjectPage } from '@/components/project/project-page'
-import { getProjectBySlug, getProjectContent } from '@/lib/projects'
+import { projectsMetadata, getProjectBySlug, getProjectContent } from '@/lib/projects'
 
 // Flagship demo components
 import { SlopSlayerDemo } from '@/components/project/demos/SlopSlayerDemo'
@@ -13,25 +13,9 @@ interface PageProps {
 }
 
 export async function generateStaticParams() {
-  return [
-    { slug: 'slopslayer' },
-    { slug: 'opinionminer' },
-    { slug: 'nutrilogic' },
-    { slug: 'dira' },
-    { slug: 'diffgeo' },
-    { slug: 'musicgame' },
-    { slug: 'spiks' },
-    { slug: 'legacy-core' },
-    { slug: 'miniecommerce' },
-    { slug: 'ukweli' },
-    { slug: 'nyaraka' },
-    { slug: 'veld' },
-    { slug: 'digital-economy' },
-    { slug: 'collab' },
-    { slug: 'the-househub' },
-    { slug: 'ai-course-recommender' },
-    { slug: 'quickfood-frontend' }
-  ]
+  return projectsMetadata.map((project) => ({
+    slug: project.slug,
+  }))
 }
 
 export async function generateMetadata({ params }: PageProps) {

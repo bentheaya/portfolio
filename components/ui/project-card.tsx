@@ -63,6 +63,7 @@ export function ProjectCard({
         href={href}
         className="block"
         data-cursor="project"
+        data-project-hue={accentHue}
         data-project-color={hexColor}
       >
         <div

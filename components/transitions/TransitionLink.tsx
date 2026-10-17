@@ -8,12 +8,16 @@ interface TransitionLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorEleme
   children: React.ReactNode;
 }
 
-export function TransitionLink({ href, children, ...props }: TransitionLinkProps) {
+export function TransitionLink({ href, children, onClick, ...props }: TransitionLinkProps) {
   const { startTransition } = usePageTransition();
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    // Let browser handle modifier clicks (command/ctrl click) or external links
+    // Invoke custom onClick first if provided (e.g., closing mobile menu)
+    onClick?.(e);
+
+    // Let browser handle modifier clicks or external links
     if (
+      e.defaultPrevented ||
       e.metaKey ||
       e.ctrlKey ||
       e.shiftKey ||
@@ -26,10 +30,10 @@ export function TransitionLink({ href, children, ...props }: TransitionLinkProps
     }
 
     e.preventDefault();
-    
+
     // Capture cursor coordinates for transition origin alignment
-    const cursorX = e.clientX || window.innerWidth / 2;
-    const cursorY = e.clientY || window.innerHeight / 2;
+    const cursorX = e.clientX || (typeof window !== 'undefined' ? window.innerWidth / 2 : 0);
+    const cursorY = e.clientY || (typeof window !== 'undefined' ? window.innerHeight / 2 : 0);
     startTransition(href, cursorX, cursorY);
   };
 

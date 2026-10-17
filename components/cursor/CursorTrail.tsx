@@ -54,15 +54,31 @@ export function CursorTrail() {
     };
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
 
-    // Read live HSL from CSS variable
-    const getAccentHSL = (): { h: number; s: number; l: number } => {
+    // Cache live HSL from CSS variable without layout thrashing
+    const cachedHSL = { h: 164, s: 68, l: 55 };
+    const updateCachedHSL = () => {
       const root = document.documentElement;
-      const style = getComputedStyle(root);
-      const h = parseFloat(style.getPropertyValue('--accent-h').trim()) || 164;
-      const s = parseFloat(style.getPropertyValue('--accent-s').trim()) || 68;
-      const l = parseFloat(style.getPropertyValue('--accent-l').trim()) || 55;
-      return { h, s, l };
+      const hStr = root.style.getPropertyValue('--accent-h').trim();
+      if (hStr) {
+        cachedHSL.h = parseFloat(hStr) || 164;
+      } else {
+        const style = getComputedStyle(root);
+        cachedHSL.h = parseFloat(style.getPropertyValue('--accent-h').trim()) || 164;
+        cachedHSL.s = parseFloat(style.getPropertyValue('--accent-s').trim()) || 68;
+        cachedHSL.l = parseFloat(style.getPropertyValue('--accent-l').trim()) || 55;
+      }
     };
+    updateCachedHSL();
+
+    const handleHueChange = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (typeof detail === 'number') {
+        cachedHSL.h = detail;
+      } else {
+        updateCachedHSL();
+      }
+    };
+    window.addEventListener('huechange', handleHueChange);
 
     const tick = () => {
       rafId = requestAnimationFrame(tick);
@@ -85,7 +101,7 @@ export function CursorTrail() {
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const { h, s, l } = getAccentHSL();
+      const { h, s, l } = cachedHSL;
 
       // Draw tail particles from oldest (most faded) to newest (brightest)
       for (let i = 0; i < particles.length; i++) {
@@ -125,6 +141,7 @@ export function CursorTrail() {
       cancelAnimationFrame(rafId);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('resize', resize);
+      window.removeEventListener('huechange', handleHueChange);
     };
   }, []);
 

@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { ScrollReveal } from '@/components/animations/ScrollReveal';
-import { TextReveal } from '@/components/ui/text-reveal';
 import { AboutHeroScene } from '@/components/ui/about-hero-scene';
 import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';

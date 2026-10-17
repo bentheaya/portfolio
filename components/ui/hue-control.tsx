@@ -110,8 +110,9 @@ export function HueControl({
     const center = canvas.width / 2;
 
     const angle = Math.atan2(y - center, x - center);
-    let newHue = Math.round((angle * 180) / Math.PI + 90);
+    let newHue = Math.round((angle * 180) / Math.PI);
     if (newHue < 0) newHue += 360;
+    if (newHue >= 360) newHue = 0;
 
     setDisplayHue(newHue);
     setHue(newHue);

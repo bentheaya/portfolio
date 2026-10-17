@@ -50,6 +50,9 @@ const connections = [
   ['ai-course-recommender', 'dira'],
   ['musicgame', 'spiks'],
   ['the-househub', 'intuilab'],
+  ['collab', 'diffgeo'],
+  ['collab', 'legacy-core'],
+  ['collab', 'dira'],
 ];
 
 interface NodeProps {

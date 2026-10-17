@@ -11,6 +11,7 @@ export function CustomCursor() {
   const isClicking = useRef(false);
   const isProject = useRef(false);
   const projectColor = useRef<string | null>(null);
+  const projectBgColor = useRef<string | null>(null);
   
   const [isVisible, setIsVisible] = useState(false);
 
@@ -52,11 +53,20 @@ export function CustomCursor() {
       if (projectCard) {
         isProject.current = true;
         isHovering.current = true;
-        projectColor.current = (projectCard as HTMLElement).getAttribute('data-project-color') || 'var(--color-accent-bright)';
+        const cardEl = projectCard as HTMLElement;
+        const hueAttr = cardEl.getAttribute('data-project-hue');
+        if (hueAttr) {
+          projectColor.current = `hsl(${hueAttr} 85% 55%)`;
+          projectBgColor.current = `hsla(${hueAttr}, 85%, 55%, 0.15)`;
+        } else {
+          projectColor.current = 'var(--color-accent-bright)';
+          projectBgColor.current = 'hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.15)';
+        }
       } else if (interactive) {
         isHovering.current = true;
         isProject.current = false;
         projectColor.current = null;
+        projectBgColor.current = null;
       }
     };
 
@@ -72,6 +82,7 @@ export function CustomCursor() {
         isHovering.current = false;
         isProject.current = false;
         projectColor.current = null;
+        projectBgColor.current = null;
       }
     };
 
@@ -99,7 +110,6 @@ export function CustomCursor() {
       // Determine dimensions based on state
       let ringSize = 28;
       let ringOffset = 14;
-      let ringStyle = 'border border-accent-bright bg-transparent';
       let dotOpacity = '1';
 
       if (isClicking.current) {
@@ -109,10 +119,8 @@ export function CustomCursor() {
         ringSize = 64;
         ringOffset = 32;
         dotOpacity = '0';
-        // Apply dynamic project custom accent color
-        const color = projectColor.current || 'var(--color-accent-bright)';
-        ringRef.current.style.borderColor = color;
-        ringRef.current.style.backgroundColor = `${color}1a`; // 10% opacity fill
+        ringRef.current.style.borderColor = projectColor.current || 'var(--color-accent-bright)';
+        ringRef.current.style.backgroundColor = projectBgColor.current || 'hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.15)';
       } else if (isHovering.current) {
         ringSize = 48;
         ringOffset = 24;

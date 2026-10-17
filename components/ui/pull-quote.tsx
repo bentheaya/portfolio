@@ -40,7 +40,7 @@ export function PullQuote({
   return (
     <blockquote
       style={style}
-      className={`space-y-4 ${className}`}
+      className={`relative pl-6 space-y-4 ${className}`}
     >
       {/* Quote mark indicator */}
       <div className="flex items-start gap-3">
