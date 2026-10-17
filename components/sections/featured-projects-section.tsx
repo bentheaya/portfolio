@@ -40,7 +40,11 @@ export function FeaturedProjectsSection({
   }, []);
 
   return (
-    <section className={`w-full py-20 md:py-32 px-4 border-t border-canvas-border/20 ${className}`}>
+    <section
+      id="featured-work"
+      data-snap-section="true"
+      className={`w-full py-20 md:py-32 px-4 border-t border-canvas-border/20 ${className}`}
+    >
       <div className="max-w-6xl mx-auto space-y-12">
         {/* Header */}
         <div className="flex items-end justify-between">

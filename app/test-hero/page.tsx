@@ -6,6 +6,7 @@ import { HomeHero } from '@/components/sections/home-hero';
 import { AboutSection } from '@/components/sections/about-section';
 import { HueControl } from '@/components/ui/hue-control';
 import { TransitionLink } from '@/components/transitions/TransitionLink';
+import { MagneticSectionSnap } from '@/components/scroll/MagneticSectionSnap';
 
 export default function TestHeroPage() {
   return (
@@ -74,6 +75,7 @@ export default function TestHeroPage() {
 
       {/* Interactive Hue Control for real-time color shifting test */}
       <HueControl />
+      <MagneticSectionSnap />
     </main>
   );
 }

@@ -35,7 +35,11 @@ export function ContactSection({
   }, []);
 
   return (
-    <footer className={`w-full py-20 md:py-32 px-4 border-t border-canvas-border/20 bg-canvas-elevated/30 ${className}`}>
+    <footer
+      id="contact"
+      data-snap-section="true"
+      className={`w-full py-20 md:py-32 px-4 border-t border-canvas-border/20 bg-canvas-elevated/30 ${className}`}
+    >
       <div className="max-w-4xl mx-auto space-y-12">
 
         {/* Heading + subtitle */}

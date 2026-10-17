@@ -46,6 +46,7 @@ export function ConstellationSection() {
   return (
     <section 
       id="constellation-section" 
+      data-snap-section="true"
       className="relative w-full py-10 md:py-14 px-6 flex flex-col justify-between overflow-hidden border-t border-canvas-border/20 bg-canvas-bg min-h-[920px] lg:h-[105vh] lg:min-h-[960px] lg:max-h-[1200px] select-none"
     >
       {/* Edge vignettes to softly blend into adjacent sections */}

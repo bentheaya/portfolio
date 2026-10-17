@@ -6,6 +6,7 @@ import { FeaturedProjectsSection, type FeaturedProject } from '@/components/sect
 import { ConstellationSection } from '@/components/sections/constellation-section';
 import { ContactSection } from '@/components/sections/contact-section';
 import { HueControl } from '@/components/ui/hue-control';
+import { MagneticSectionSnap } from '@/components/scroll/MagneticSectionSnap';
 
 export default function Home() {
 
@@ -85,6 +86,7 @@ export default function Home() {
       />
 
       <HueControl />
+      <MagneticSectionSnap />
     </>
   );
 }

@@ -24,7 +24,11 @@ export function AboutSection({
   className = '',
 }: AboutSectionProps) {
   return (
-    <section className={`w-full py-20 md:py-32 px-4 border-t border-canvas-border/20 ${className}`}>
+    <section
+      id="about"
+      data-snap-section="true"
+      className={`w-full py-20 md:py-32 px-4 border-t border-canvas-border/20 ${className}`}
+    >
       <div className="max-w-6xl mx-auto">
         {/* Section label */}
         <span className="text-xs font-mono text-accent-bright mb-4 block">// identity.node</span>

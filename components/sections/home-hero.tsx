@@ -148,6 +148,8 @@ export function HomeHero({
 
   return (
     <section
+      id="hero"
+      data-snap-section="true"
       ref={sectionRef}
       className={`relative min-h-screen w-full flex items-end justify-start px-6 md:px-12 pb-20 md:pb-28 overflow-hidden bg-canvas-bg z-10 ${className}`}
     >
