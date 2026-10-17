@@ -18,8 +18,8 @@ const projectsMap = new Map<string, ProjectMetadata>(
 const numProjects = projectsMetadata.length;
 export const sphericalPositions: { [slug: string]: [number, number, number] } = {};
 
-// Clamped cluster radius to fit comfortably within camera view frustum
-const CLUSTER_RADIUS = 2.15;
+// Clamped cluster radius to fit comfortably within dedicated viewport stage
+const CLUSTER_RADIUS = 2.0;
 
 projectsMetadata.forEach((project, idx) => {
   const offset = 2 / numProjects;
@@ -617,11 +617,12 @@ export default function ConstellationScene({ activeFilter }: { activeFilter: str
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}
-      className="absolute inset-0 z-0 w-full h-full pointer-events-auto bg-canvas-bg cursor-grab active:cursor-grabbing"
+      className="absolute inset-0 z-0 w-full h-full pointer-events-auto bg-transparent cursor-grab active:cursor-grabbing"
     >
       <Canvas
         camera={{ position: [0, 0, 6.2], fov: 45 }}
         gl={{ alpha: true, antialias: true }}
+        style={{ background: 'transparent' }}
       >
         <SceneOrchestrator activeFilter={activeFilter} mouseState={mouseState} />
       </Canvas>

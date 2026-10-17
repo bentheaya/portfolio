@@ -46,21 +46,18 @@ export function ConstellationSection() {
   return (
     <section 
       id="constellation-section" 
-      className="relative w-full py-16 px-6 flex flex-col justify-between overflow-hidden border-t border-canvas-border/20 bg-canvas-bg lg:h-[88vh] lg:min-h-[720px] lg:max-h-[960px] lg:py-12 select-none"
+      className="relative w-full py-10 md:py-14 px-6 flex flex-col justify-between overflow-hidden border-t border-canvas-border/20 bg-canvas-bg min-h-[920px] lg:h-[105vh] lg:min-h-[960px] lg:max-h-[1200px] select-none"
     >
-      {/* Dynamic 3D interactive browseable node graph (desktop only) */}
-      {!isMobile && <ConstellationScene activeFilter={activeFilter} />}
-
       {/* Edge vignettes to softly blend into adjacent sections */}
-      <div className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_center,transparent_45%,var(--color-canvas-bg)_100%)] opacity-85" />
+      <div className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_center,transparent_50%,var(--color-canvas-bg)_100%)] opacity-85" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-canvas-bg via-canvas-bg/60 to-transparent z-[1]" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-canvas-bg via-canvas-bg/60 to-transparent z-[1]" />
 
-      {/* Foreground contents */}
-      <div className="relative z-10 max-w-7xl mx-auto w-full flex flex-col justify-between h-full space-y-6 pointer-events-none">
+      {/* Section Content Column */}
+      <div className="relative z-10 max-w-7xl mx-auto w-full flex flex-col justify-between h-full space-y-4">
         
-        {/* Track filter HUD header */}
-        <div className="space-y-4 pointer-events-auto">
+        {/* 1. Track filter HUD header — positioned cleanly above the constellation */}
+        <div className="space-y-4 pointer-events-auto shrink-0 pb-1">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div className="space-y-1">
               <span className="text-xs font-mono text-accent-bright">// living systems topology</span>
@@ -92,7 +89,7 @@ export function ConstellationSection() {
           </div>
         </div>
 
-        {/* Mobile / Fallback representation (pure CSS/interactive list of nodes) */}
+        {/* 2. Middle stage: Dedicated 3D Interactive Constellation (desktop) or Card Grid (mobile) */}
         {isMobile ? (
           <div className="grid sm:grid-cols-2 gap-4 w-full pt-6 pointer-events-auto">
             {filteredProjects.map((p) => (
@@ -119,12 +116,14 @@ export function ConstellationSection() {
             ))}
           </div>
         ) : (
-          /* Flexible spacer allowing 3D canvas unobstructed raycasting */
-          <div className="flex-1 pointer-events-none min-h-[300px]" />
+          /* Dedicated 3D Stage positioned strictly below header and filter tags */
+          <div className="relative w-full flex-1 min-h-[580px] lg:min-h-[660px] xl:min-h-[740px] my-2 pointer-events-auto">
+            <ConstellationScene activeFilter={activeFilter} />
+          </div>
         )}
 
-        {/* Constellation bottom stats details HUD */}
-        <div className="pt-4 border-t border-canvas-border/10 flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono text-xs text-canvas-text-tertiary pointer-events-auto">
+        {/* 3. Constellation bottom stats details HUD — positioned cleanly below the constellation */}
+        <div className="pt-4 border-t border-canvas-border/10 flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono text-xs text-canvas-text-tertiary pointer-events-auto shrink-0">
           <div className="flex items-center gap-6">
             <span>// track: {activeFilter === 'All' ? 'Complete Graph' : activeFilter}</span>
             <span>// active_nodes: {filteredProjects.length} / {projectsMetadata.length}</span>
