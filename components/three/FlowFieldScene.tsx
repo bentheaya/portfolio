@@ -182,8 +182,8 @@ function RiemannianFlowMesh({ heroHeight }: { heroHeight: number }) {
 
       // Color gradient: Head is bright, Tail fades out smoothly
       const lifeNorm = Math.sin((p.life / p.maxLife) * Math.PI);
-      const alphaHead = 0.55 * lifeNorm * fadeFactor;
-      const alphaTail = 0.06 * lifeNorm * fadeFactor;
+      const alphaHead = 0.28 * lifeNorm * fadeFactor;
+      const alphaTail = 0.03 * lifeNorm * fadeFactor;
 
       const cHead = themeColors.headCol;
       const cTail = themeColors.tailCol;
@@ -199,7 +199,7 @@ function RiemannianFlowMesh({ heroHeight }: { heroHeight: number }) {
       // Luminous head dot
       if (headsInstancedRef.current && i < PARTICLE_COUNT / 2) {
         dummy.position.set(p.x, p.y, p.z);
-        dummy.scale.setScalar(0.018 * lifeNorm * fadeFactor);
+        dummy.scale.setScalar(0.015 * lifeNorm * fadeFactor);
         dummy.updateMatrix();
         headsInstancedRef.current.setMatrixAt(i, dummy.matrix);
       }
@@ -246,7 +246,7 @@ function RiemannianFlowMesh({ heroHeight }: { heroHeight: number }) {
         <meshBasicMaterial
           color={themeColors.headCol}
           transparent
-          opacity={0.8}
+          opacity={0.35}
           blending={THREE.AdditiveBlending}
         />
       </instancedMesh>

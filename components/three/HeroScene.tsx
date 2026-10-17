@@ -52,7 +52,7 @@ function createNodes(count: number): StarNode[] {
       px: r1 * Math.PI * 2,
       py: r2 * Math.PI * 2,
       pz: r3 * Math.PI * 2,
-      size: 0.022 + r1 * 0.022,
+      size: 0.016 + r1 * 0.016, // Refined micro-scale star nodes
     });
   }
   return nodes;
@@ -82,12 +82,12 @@ function AmbientProximityMesh({ heroHeight }: { heroHeight: number }) {
   const mouse = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
   const scrollY = useRef(0);
 
-  // Color tokens synchronized with HueProvider
+  // Color tokens synchronized with HueProvider (calibrated for delicate background blending)
   const themeColors = useMemo(() => {
-    const primary = new THREE.Color().setHSL(hue / 360, 0.85, 0.55);
-    const bright = new THREE.Color().setHSL(hue / 360, 0.95, 0.70);
-    const secondary = new THREE.Color().setHSL(((hue + 32) % 360) / 360, 0.75, 0.45);
-    const dim = new THREE.Color().setHSL(hue / 360, 0.40, 0.25);
+    const primary = new THREE.Color().setHSL(hue / 360, 0.65, 0.45);
+    const bright = new THREE.Color().setHSL(hue / 360, 0.72, 0.55);
+    const secondary = new THREE.Color().setHSL(((hue + 25) % 360) / 360, 0.55, 0.35);
+    const dim = new THREE.Color().setHSL(hue / 360, 0.35, 0.20);
     return { primary, bright, secondary, dim };
   }, [hue]);
 
@@ -153,7 +153,7 @@ function AmbientProximityMesh({ heroHeight }: { heroHeight: number }) {
       // Update instanced sphere matrix
       if (instancedNodesRef.current) {
         dummy.position.set(px, py, pz);
-        const hoverPulse = distToMouse < 1.0 ? 1.4 : 1.0;
+        const hoverPulse = distToMouse < 1.0 ? 1.2 : 1.0;
         dummy.scale.setScalar(n.size * hoverPulse * fadeFactor);
         dummy.updateMatrix();
         instancedNodesRef.current.setMatrixAt(i, dummy.matrix);
@@ -187,9 +187,9 @@ function AmbientProximityMesh({ heroHeight }: { heroHeight: number }) {
           linePositions[posIdx++] = p2.y;
           linePositions[posIdx++] = p2.z;
 
-          // Alpha inversely proportional to distance (smooth quadratic falloff)
+          // Alpha: gentle, subtle falloff to softly blend into the background photo
           const normDist = dist / PROXIMITY_DIST;
-          const alpha = (1 - normDist * normDist) * 0.38 * fadeFactor;
+          const alpha = Math.pow(1 - normDist, 1.4) * 0.14 * fadeFactor;
 
           const c1 = themeColors.primary;
           const c2 = themeColors.secondary;
@@ -228,16 +228,16 @@ function AmbientProximityMesh({ heroHeight }: { heroHeight: number }) {
         linePositions[posIdx++] = p.y;
         linePositions[posIdx++] = p.z;
 
-        const tetherAlpha = (1 - nearest.d / (MOUSE_ATTRACT_DIST * 1.2)) * 0.55 * fadeFactor;
+        const tetherAlpha = (1 - nearest.d / (MOUSE_ATTRACT_DIST * 1.2)) * 0.22 * fadeFactor;
         const c = themeColors.bright;
 
         lineColors[colIdx++] = c.r * tetherAlpha;
         lineColors[colIdx++] = c.g * tetherAlpha;
         lineColors[colIdx++] = c.b * tetherAlpha;
 
-        lineColors[colIdx++] = c.r * tetherAlpha * 0.7;
-        lineColors[colIdx++] = c.g * tetherAlpha * 0.7;
-        lineColors[colIdx++] = c.b * tetherAlpha * 0.7;
+        lineColors[colIdx++] = c.r * tetherAlpha * 0.6;
+        lineColors[colIdx++] = c.g * tetherAlpha * 0.6;
+        lineColors[colIdx++] = c.b * tetherAlpha * 0.6;
 
         edgeCount++;
       }
@@ -262,7 +262,7 @@ function AmbientProximityMesh({ heroHeight }: { heroHeight: number }) {
 
         const t = (time * 0.35 + p * 0.22) % 1.0;
         dummy.position.lerpVectors(p1, p2, t);
-        dummy.scale.setScalar(0.038 * fadeFactor);
+        dummy.scale.setScalar(0.022 * fadeFactor);
         dummy.updateMatrix();
         photonsRef.current.setMatrixAt(p, dummy.matrix);
       }
@@ -272,18 +272,18 @@ function AmbientProximityMesh({ heroHeight }: { heroHeight: number }) {
 
   return (
     <>
-      {/* Node Star Vertices */}
+      {/* Node Star Vertices — Soft background luminous dots */}
       <instancedMesh ref={instancedNodesRef} args={[undefined, undefined, NODE_COUNT]}>
-        <sphereGeometry args={[1, 12, 12]} />
+        <sphereGeometry args={[1, 10, 10]} />
         <meshBasicMaterial
           color={themeColors.bright}
           transparent
-          opacity={0.85}
+          opacity={0.32}
           blending={THREE.AdditiveBlending}
         />
       </instancedMesh>
 
-      {/* Dynamic Proximity Mesh Lines */}
+      {/* Dynamic Proximity Mesh Lines — Delicate translucent filaments */}
       <lineSegments>
         <bufferGeometry ref={linesGeoRef}>
           <bufferAttribute
@@ -303,13 +303,13 @@ function AmbientProximityMesh({ heroHeight }: { heroHeight: number }) {
         />
       </lineSegments>
 
-      {/* Synaptic Energy Pulses */}
+      {/* Synaptic Energy Pulses — Subtle gentle photon pulses */}
       <instancedMesh ref={photonsRef} args={[undefined, undefined, 8]}>
         <sphereGeometry args={[1, 8, 8]} />
         <meshBasicMaterial
           color={themeColors.bright}
           transparent
-          opacity={0.95}
+          opacity={0.36}
           blending={THREE.AdditiveBlending}
         />
       </instancedMesh>
