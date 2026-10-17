@@ -5,15 +5,15 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useHue } from '@/components/hue/HueProvider';
 
-// Configuration parameters
-const NODE_COUNT = 80;
-const MAX_EDGES = 240;
-const PROXIMITY_DIST = 1.75;
-const MOUSE_ATTRACT_DIST = 2.4;
+// Configuration parameters calibrated for right-third constellation layout
+const NODE_COUNT = 52;
+const MAX_EDGES = 160;
+const PROXIMITY_DIST = 1.35;
+const MOUSE_ATTRACT_DIST = 2.0;
 
 interface StarNode {
-  x0: number;
-  y0: number;
+  normX: number; // 0 to 1 across the right ~1/3 of the screen
+  normY: number; // -0.5 to +0.5 vertically
   z0: number;
   ax: number;
   ay: number;
@@ -27,7 +27,7 @@ interface StarNode {
   size: number;
 }
 
-// Generate deterministic organic distribution of star nodes
+// Generate deterministic organic distribution of star nodes anchored to the right
 function createNodes(count: number): StarNode[] {
   const nodes: StarNode[] = [];
   for (let i = 0; i < count; i++) {
@@ -40,15 +40,16 @@ function createNodes(count: number): StarNode[] {
     const r3 = s3 - Math.floor(s3);
 
     nodes.push({
-      x0: (r1 - 0.5) * 11.5,      // Wide desktop X spread
-      y0: (r2 - 0.5) * 6.8,       // Vertical spread matching hero aspect
-      z0: (r3 - 0.5) * 3.8 - 1.2, // Depth spread from -3.1 to +0.7
-      ax: 0.12 + r2 * 0.22,
-      ay: 0.12 + r3 * 0.22,
-      az: 0.08 + r1 * 0.18,
-      wx: 0.25 + r1 * 0.45,
-      wy: 0.20 + r2 * 0.40,
-      wz: 0.15 + r3 * 0.35,
+      // Spread across the right third with organic feathering toward the center
+      normX: Math.pow(r1, 0.85),
+      normY: r2 - 0.5,
+      z0: (r3 - 0.5) * 3.2 - 1.2,
+      ax: 0.08 + r2 * 0.14,
+      ay: 0.10 + r3 * 0.18,
+      az: 0.06 + r1 * 0.12,
+      wx: 0.25 + r1 * 0.40,
+      wy: 0.20 + r2 * 0.35,
+      wz: 0.15 + r3 * 0.30,
       px: r1 * Math.PI * 2,
       py: r2 * Math.PI * 2,
       pz: r3 * Math.PI * 2,
@@ -128,22 +129,31 @@ function AmbientProximityMesh({ heroHeight }: { heroHeight: number }) {
 
     if (fadeFactor <= 0.01) return;
 
+    // Anchor constellation to the right ~1/3 of the screen:
+    // rightStartX starts at +15% of viewport width (leaving the left ~65% empty for text & photo)
+    // rightSpanX covers the remaining width to the right edge (+50% of viewport width)
+    const rightStartX = viewport.width * 0.15;
+    const rightSpanX = viewport.width * 0.35;
+    const spanY = viewport.height * 0.88;
+
     // 1. Update node positions with harmonic drift & mouse attraction
     for (let i = 0; i < NODE_COUNT; i++) {
       const n = nodes[i];
 
-      // Base harmonic drift
-      let px = n.x0 + Math.sin(time * n.wx + n.px) * n.ax;
-      let py = n.y0 + Math.cos(time * n.wy + n.py) * n.ay;
+      const baseX = rightStartX + n.normX * rightSpanX;
+      const baseY = n.normY * spanY;
+
+      let px = baseX + Math.sin(time * n.wx + n.px) * n.ax;
+      let py = baseY + Math.cos(time * n.wy + n.py) * n.ay;
       let pz = n.z0 + Math.sin(time * n.wz + n.pz) * n.az;
 
-      // Mouse gravitational attraction
+      // Mouse gravitational attraction (active when cursor approaches the right section)
       const dx = mouseWorldX - px;
       const dy = mouseWorldY - py;
       const distToMouse = Math.sqrt(dx * dx + dy * dy);
 
       if (distToMouse < MOUSE_ATTRACT_DIST && distToMouse > 0.05) {
-        const pull = (1 - distToMouse / MOUSE_ATTRACT_DIST) * 0.35;
+        const pull = (1 - distToMouse / MOUSE_ATTRACT_DIST) * 0.28;
         px += dx * pull;
         py += dy * pull;
       }
@@ -187,7 +197,7 @@ function AmbientProximityMesh({ heroHeight }: { heroHeight: number }) {
           linePositions[posIdx++] = p2.y;
           linePositions[posIdx++] = p2.z;
 
-          // Alpha: gentle, subtle falloff to softly blend into the background photo
+          // Alpha: gentle, subtle falloff to softly blend into the background
           const normDist = dist / PROXIMITY_DIST;
           const alpha = Math.pow(1 - normDist, 1.4) * 0.14 * fadeFactor;
 
@@ -207,7 +217,7 @@ function AmbientProximityMesh({ heroHeight }: { heroHeight: number }) {
       }
     }
 
-    // 3. Tether the 3 closest nodes to the mouse cursor
+    // 3. Tether the 2 closest nodes ONLY if mouse approaches the right 1/3
     const nodeDists: { idx: number; d: number }[] = [];
     for (let i = 0; i < NODE_COUNT; i++) {
       const dx = mouseWorldX - currentPositions[i].x;
@@ -216,9 +226,9 @@ function AmbientProximityMesh({ heroHeight }: { heroHeight: number }) {
     }
     nodeDists.sort((a, b) => a.d - b.d);
 
-    for (let k = 0; k < 3 && edgeCount < MAX_EDGES; k++) {
+    for (let k = 0; k < 2 && edgeCount < MAX_EDGES; k++) {
       const nearest = nodeDists[k];
-      if (nearest.d < MOUSE_ATTRACT_DIST * 1.2) {
+      if (nearest.d < MOUSE_ATTRACT_DIST) {
         const p = currentPositions[nearest.idx];
         linePositions[posIdx++] = mouseWorldX;
         linePositions[posIdx++] = mouseWorldY;
@@ -228,7 +238,7 @@ function AmbientProximityMesh({ heroHeight }: { heroHeight: number }) {
         linePositions[posIdx++] = p.y;
         linePositions[posIdx++] = p.z;
 
-        const tetherAlpha = (1 - nearest.d / (MOUSE_ATTRACT_DIST * 1.2)) * 0.22 * fadeFactor;
+        const tetherAlpha = (1 - nearest.d / MOUSE_ATTRACT_DIST) * 0.20 * fadeFactor;
         const c = themeColors.bright;
 
         lineColors[colIdx++] = c.r * tetherAlpha;
@@ -252,15 +262,15 @@ function AmbientProximityMesh({ heroHeight }: { heroHeight: number }) {
 
     // 4. Update traveling synaptic pulse photons along nodes
     if (photonsRef.current) {
-      const PHOTON_COUNT = 8;
+      const PHOTON_COUNT = 6;
       for (let p = 0; p < PHOTON_COUNT; p++) {
-        const n1Idx = (p * 9 + Math.floor(time * 0.1)) % NODE_COUNT;
-        const n2Idx = (n1Idx + 5) % NODE_COUNT;
+        const n1Idx = (p * 8 + Math.floor(time * 0.1)) % NODE_COUNT;
+        const n2Idx = (n1Idx + 3) % NODE_COUNT;
 
         const p1 = currentPositions[n1Idx];
         const p2 = currentPositions[n2Idx];
 
-        const t = (time * 0.35 + p * 0.22) % 1.0;
+        const t = (time * 0.35 + p * 0.25) % 1.0;
         dummy.position.lerpVectors(p1, p2, t);
         dummy.scale.setScalar(0.022 * fadeFactor);
         dummy.updateMatrix();
@@ -272,7 +282,7 @@ function AmbientProximityMesh({ heroHeight }: { heroHeight: number }) {
 
   return (
     <>
-      {/* Node Star Vertices — Soft background luminous dots */}
+      {/* Node Star Vertices — Soft background luminous dots anchored on the right */}
       <instancedMesh ref={instancedNodesRef} args={[undefined, undefined, NODE_COUNT]}>
         <sphereGeometry args={[1, 10, 10]} />
         <meshBasicMaterial
@@ -304,7 +314,7 @@ function AmbientProximityMesh({ heroHeight }: { heroHeight: number }) {
       </lineSegments>
 
       {/* Synaptic Energy Pulses — Subtle gentle photon pulses */}
-      <instancedMesh ref={photonsRef} args={[undefined, undefined, 8]}>
+      <instancedMesh ref={photonsRef} args={[undefined, undefined, 6]}>
         <sphereGeometry args={[1, 8, 8]} />
         <meshBasicMaterial
           color={themeColors.bright}
