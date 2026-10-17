@@ -7,16 +7,15 @@ import { animateTextIn } from '@/lib/animations';
 import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
 
-// Lazy-load Three.js scene — pass heroHeight for scroll-parallax
+// Lazy-load Three.js scenes — pass heroHeight for scroll-parallax
 const HeroScene = dynamic(() => import('@/components/three/HeroScene'), {
   ssr: false,
-  loading: () => (
-    <div className="absolute inset-0 z-[1] flex items-center justify-center pointer-events-none select-none">
-      <span className="text-[9px] font-mono text-canvas-text-tertiary uppercase tracking-widest animate-pulse">
-        // loading.constellation_nodes...
-      </span>
-    </div>
-  ),
+  loading: () => null,
+});
+
+const FlowFieldScene = dynamic(() => import('@/components/three/FlowFieldScene'), {
+  ssr: false,
+  loading: () => null,
 });
 
 interface HomeHeroProps {
@@ -25,6 +24,7 @@ interface HomeHeroProps {
   location?: string;
   status?: string;
   className?: string;
+  variant?: 'mesh' | 'flow';
 }
 
 /**
@@ -41,6 +41,7 @@ export function HomeHero({
   location,
   status,
   className = '',
+  variant = 'mesh',
 }: HomeHeroProps) {
   const line1Ref   = useRef<HTMLSpanElement>(null);
   const line2Ref   = useRef<HTMLSpanElement>(null);
@@ -171,8 +172,14 @@ export function HomeHero({
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_110%_80%_at_55%_35%,transparent_35%,rgb(8,8,8)_85%)]" />
       </div>
 
-      {/* ── z-[1]: Three.js constellation (transparent bg — photo shows) ───── */}
-      {mounted && !isMobile && <HeroScene heroHeight={heroHeight} />}
+      {/* ── z-[1]: Three.js background scene (transparent bg — photo shows) ── */}
+      {mounted && !isMobile && (
+        variant === 'flow' ? (
+          <FlowFieldScene heroHeight={heroHeight} />
+        ) : (
+          <HeroScene heroHeight={heroHeight} />
+        )
+      )}
 
       {/* ── z-[2]: Bottom readability fade ──────────────────────────────────── */}
       <div className="absolute inset-0 z-[2] bg-gradient-to-t from-canvas-bg via-canvas-bg/20 to-transparent pointer-events-none" />
